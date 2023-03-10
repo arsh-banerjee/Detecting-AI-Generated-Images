@@ -1,8 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from skimage.io import imread, imshow
 from skimage.color import rgb2hsv, rgb2gray, rgb2yuv
-import PIL
 from PIL import Image, ImageOps
 import os
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
