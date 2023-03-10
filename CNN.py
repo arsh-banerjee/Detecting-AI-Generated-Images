@@ -6,6 +6,7 @@ import os
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
 from keras import regularizers
+import cv2
 
 def trainCNN(size=200, n=500, epochs=5, gs=False, Fourier=False, macOs=False, verbose=True, name="Model", plot=False):
     print("Image Size: {size}x{size}, N: {n}, Epochs: {e}, GS: {bool}".format(size=size, n=n, e=epochs, bool=gs))
@@ -48,7 +49,10 @@ def trainCNN(size=200, n=500, epochs=5, gs=False, Fourier=False, macOs=False, ve
                     im = rgb2gray(im)  # Grayscale
                 if Fourier:
                     im = rgb2gray(im)
-                    im = np.fft.fftshift(np.fft.fft2(im))  # Fourier Transform feature
+                    #  im = np.fft.fftshift(np.fft.fft2(im))  # Fourier Transform feature
+                    im = (im * 255).astype(np.uint8)
+                    im = im - cv2.fastNlMeansDenoising(im)
+
                 image_data.append(im)
                 category.append(label)
             i += 1
@@ -92,5 +96,5 @@ def trainCNN(size=200, n=500, epochs=5, gs=False, Fourier=False, macOs=False, ve
 
 
 if __name__ == '__main__':
-    trainCNN(size=200, n=1500, epochs=15, macOs=False, name="CNN with image size 200", plot=True)
+    #  trainCNN(size=200, n=1500, epochs=15, macOs=False, name="CNN with image size 200", plot=True)
     trainCNN(size=200, n=1500, epochs=15, Fourier=True, macOs=False, name="CNN with Fourier", plot=True)
