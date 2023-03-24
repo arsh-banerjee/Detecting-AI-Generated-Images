@@ -7,15 +7,21 @@ from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 from sklearn import svm
+import cv2
 from sklearn.model_selection import GridSearchCV
+
 
 def trainSVM(n=1500, macOs=False):
     if macOs:
         directories = ["/Users/arshbanerjee/Downloads/archive/StableDiff/StableDiff/StableDiff/",
-                       "/Users/arshbanerjee/Downloads/archive/laion400m-laion4.75/laion400m-laion4.75/laion400m-laion4.75+/laion400m-laion4.75+/"]
+                       "/Users/arshbanerjee/Downloads/archive/laion400m-laion4.75/laion400m-laion4.75/laion400m"
+                       "-laion4.75+/laion400m-laion4.75+/"]
     else:
         directories = ["C:/Users/arsh0/Downloads/archive/StableDiff/StableDiff/StableDiff/",
-                       "C:/Users/arsh0/Downloads/archive/laion400m-laion4.75/laion400m-laion4.75/laion400m-laion4.75+/laion400m-laion4.75+"]
+                       #  "C:/Users/arsh0/Downloads/archive/dalle-samples (6)/"]
+                       "C:/Users/arsh0/Downloads/archive/laion400m-laion4.75/laion400m-laion4.75/laion400m-laion4.75"
+                       "+/laion400m"
+                       "-laion4.75+"]
 
     category = []
     label = -1
@@ -36,33 +42,38 @@ def trainSVM(n=1500, macOs=False):
                 if np.array(image).shape[2] == 4:
                     continue
 
-                im = rgb2gray(ImageOps.fit(image, (512, 512)))
+                im = ImageOps.fit(image, (512, 512))  # Resize image to 512x512
+                im_gs = rgb2gray(im)  # Convert image to grayscale
                 # image_data.append(im.flatten())
-                category.append(0)
-                histogram, bin_edges = np.histogram(im, bins=256, range=(0, 1))
-                Hist.append(histogram)
+                histogram, bin_edges = np.histogram(im_gs, bins=256, range=(0, 1))  # Create histogram of grayscale
+
+                imcv = cv2.cvtColor(np.array(im), cv2.COLOR_RGB2BGR)  # Convert Pillow Image to cv2 image
+                blue_color = cv2.calcHist([imcv], [0], None, [256], [0, 256])  # Hist of blue channel
+                red_color = cv2.calcHist([imcv], [1], None, [256], [0, 256])  # Hist of red channel
+                green_color = cv2.calcHist([imcv], [2], None, [256], [0, 256])  # Hist of green channel
+                rgb = np.concatenate((blue_color.flatten(), red_color.flatten(), green_color.flatten()))
 
                 category.append(label)
-            i += 1
-            if i == n:
-                #  print("Directory Loaded")
-                break
+                Hist.append(rgb)
 
-    param_grid = {'C': [0.1, 1, 10, 100], 'gamma': [0.0001, 0.001, 0.1, 1], 'kernel': ['rbf', 'poly']}
-    svc = svm.SVC(probability=True, verbose=True)
-    model = GridSearchCV(svc, param_grid)
+                i += 1
+                if i == n:
+                    print("Directory Loaded")
+                    break
 
+    svc = svm.SVC(probability=True)
     x_train, x_test, y_train, y_test = train_test_split(Hist, category, test_size=0.20, random_state=77)
-    model.fit(x_train, y_train)
-    y_pred = model.predict(x_test)
+
+    svc.fit(x_train, y_train)
+    y_pred = svc.predict(x_test)
     print(f"The model is {accuracy_score(y_pred, y_test) * 100}% accurate")
 
     cm = confusion_matrix(y_test, y_pred)
     disp = ConfusionMatrixDisplay(confusion_matrix=cm)
     disp.plot()
     plt.show()
+
+
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     trainSVM()
-
-

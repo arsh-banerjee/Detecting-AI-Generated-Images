@@ -7,6 +7,8 @@ import tensorflow as tf
 from sklearn.model_selection import train_test_split
 from keras import regularizers
 import cv2
+from sklearn.metrics import ConfusionMatrixDisplay, confusion_matrix
+
 
 def trainCNN(size=200, n=500, epochs=5, gs=False, Fourier=False, macOs=False, verbose=True, name="Model", plot=False):
     print("Image Size: {size}x{size}, N: {n}, Epochs: {e}, GS: {bool}".format(size=size, n=n, e=epochs, bool=gs))
@@ -20,8 +22,6 @@ def trainCNN(size=200, n=500, epochs=5, gs=False, Fourier=False, macOs=False, ve
     # Load Files and Create Features
     image_data = []
     category = []
-    size = 200  # Image Size
-    n = 500  # Number of images to pull from each class
     label = -1
     channels = 3
     if gs | Fourier:
@@ -70,7 +70,8 @@ def trainCNN(size=200, n=500, epochs=5, gs=False, Fourier=False, macOs=False, ve
         tf.keras.layers.Conv2D(32, (3, 3), padding='same', activation=tf.nn.relu,
                                input_shape=(size, size, channels), kernel_regularizer=regularizers.L1L2(l1=1, l2=1)),
         tf.keras.layers.MaxPooling2D((2, 2), strides=2),
-        tf.keras.layers.Conv2D(32, (3, 3), padding='same', activation=tf.nn.relu, kernel_regularizer=regularizers.L1L2(l1=1, l2=1)),
+        tf.keras.layers.Conv2D(32, (3, 3), padding='same', activation=tf.nn.relu,
+                               kernel_regularizer=regularizers.L1L2(l1=1, l2=1)),
         tf.keras.layers.MaxPooling2D((2, 2), strides=2),
         tf.keras.layers.Dropout(0.5),
         tf.keras.layers.Flatten(),
@@ -84,7 +85,7 @@ def trainCNN(size=200, n=500, epochs=5, gs=False, Fourier=False, macOs=False, ve
     score = model.evaluate(X_test, y_test, verbose=0)
     print("Test Score: ", score[0])
     print("Test accuracy: ", score[1])
-
+    y_pred = model.predict(X_test)
     if plot:
         plt.plot(history.history['accuracy'])
         plt.plot(history.history['val_accuracy'])
@@ -94,7 +95,12 @@ def trainCNN(size=200, n=500, epochs=5, gs=False, Fourier=False, macOs=False, ve
         plt.legend(['train', 'val'], loc='upper left')
         plt.show()
 
+        cm = confusion_matrix(y_test, y_pred)
+        disp = ConfusionMatrixDisplay(confusion_matrix=cm)
+        disp.plot(cmap=plt.cm.Blues)
+        plt.show()
+
 
 if __name__ == '__main__':
     #  trainCNN(size=200, n=1500, epochs=15, macOs=False, name="CNN with image size 200", plot=True)
-    trainCNN(size=200, n=1500, epochs=15, Fourier=True, macOs=False, name="CNN with Fourier", plot=True)
+    trainCNN(size=200, n=2000, epochs=15, macOs=False, name="CNN (200x200)", plot=True)
