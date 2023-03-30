@@ -8,76 +8,34 @@ from sklearn.model_selection import train_test_split
 from keras import regularizers
 import cv2
 from sklearn.metrics import ConfusionMatrixDisplay, confusion_matrix
+from Data_Util import loadDataCNN
 
 
-def trainCNN(size=200, n=500, epochs=5, gs=False, Fourier=False, macOs=False, verbose=True, name="Model", plot=False):
+def trainCNN(size=200, n=500, epochs=5, verbose=True, name="Model", plot=False):
     print("Image Size: {size}x{size}, N: {n}, Epochs: {e}, GS: {bool}".format(size=size, n=n, e=epochs, bool=gs))
-    if macOs:
-        directories = ["/Users/arshbanerjee/Downloads/archive/StableDiff/StableDiff/StableDiff/",
-                       "/Users/arshbanerjee/Downloads/archive/laion400m-laion4.75/laion400m-laion4.75/laion400m-laion4.75+/laion400m-laion4.75+/"]
-    else:
-        directories = ["C:/Users/arsh0/Downloads/archive/StableDiff/StableDiff/StableDiff/",
-                       "C:/Users/arsh0/Downloads/archive/laion400m-laion4.75/laion400m-laion4.75/laion400m-laion4.75+/laion400m-laion4.75+"]
 
-    # Load Files and Create Features
-    image_data = []
-    category = []
-    label = -1
-    channels = 3
-    if gs | Fourier:
-        channels = 1
-
-    for dirc in directories:
-        i = 0
-        label += 1
-        for filename in os.listdir(dirc):
-            f = os.path.join(dirc, filename)
-            # checking if it is a file
-            if os.path.isfile(f):
-                image = Image.open(f)
-
-                # Skip over corrupted images/incorrect shapes
-                if len(np.array(image).shape) != 3:
-                    continue
-                if np.array(image).shape[2] == 4:
-                    continue
-
-                im = ImageOps.fit(image, (size, size))
-                im = np.array(im)
-
-                if gs:
-                    im = rgb2gray(im)  # Grayscale
-                if Fourier:
-                    im = rgb2gray(im)
-                    #  im = np.fft.fftshift(np.fft.fft2(im))  # Fourier Transform feature
-                    im = (im * 255).astype(np.uint8)
-                    im = im - cv2.fastNlMeansDenoising(im)
-
-                image_data.append(im)
-                category.append(label)
-            i += 1
-            if i == n:
-                #  print("Directory Loaded")
-                break
-
-    image_data = np.array(image_data)
-    category = np.array(category)
-    X_train, X_test, y_train, y_test = train_test_split(image_data, category, test_size=0.2, random_state=4)
-
+    X_train = X_train / 255.0
+    X_test = X_test / 255.0
     batch_size = 16
 
-    model = tf.keras.Sequential([
-        tf.keras.layers.Conv2D(32, (3, 3), padding='same', activation=tf.nn.relu,
-                               input_shape=(size, size, channels), kernel_regularizer=regularizers.L1L2(l1=1, l2=1)),
-        tf.keras.layers.MaxPooling2D((2, 2), strides=2),
-        tf.keras.layers.Conv2D(32, (3, 3), padding='same', activation=tf.nn.relu,
-                               kernel_regularizer=regularizers.L1L2(l1=1, l2=1)),
-        tf.keras.layers.MaxPooling2D((2, 2), strides=2),
-        tf.keras.layers.Dropout(0.5),
+    model = tf.keras.models.Sequential([
+        # since Conv2D is the first layer of the neural network, we should also specify the size of the input
+        tf.keras.layers.Conv2D(16, (3, 3), activation='relu', input_shape=(size, size, 3)),
+        # apply pooling
+        tf.keras.layers.MaxPooling2D(2, 2),
+        tf.keras.layers.Dropout(0.1),
+        # and repeat the process
+        tf.keras.layers.Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_normal',
+                               kernel_regularizer=regularizers.l2(l=0.1)),
+        tf.keras.layers.MaxPooling2D(2, 2),
+        # flatten the result to feed it to the dense layer
+        tf.keras.layers.Dropout(0.2),
         tf.keras.layers.Flatten(),
-        tf.keras.layers.Dense(128, activation=tf.nn.relu),
+        # and define 512 neurons for processing the output coming by the previous layers
+        tf.keras.layers.Dense(512, activation='relu'),
         tf.keras.layers.Dense(1, activation='sigmoid')
     ])
+
     model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
     history = model.fit(X_train, y_train, batch_size=batch_size, epochs=epochs, verbose=verbose,
                         validation_data=(X_test, y_test))
@@ -86,6 +44,7 @@ def trainCNN(size=200, n=500, epochs=5, gs=False, Fourier=False, macOs=False, ve
     print("Test Score: ", score[0])
     print("Test accuracy: ", score[1])
     y_pred = model.predict(X_test)
+
     if plot:
         plt.plot(history.history['accuracy'])
         plt.plot(history.history['val_accuracy'])
@@ -100,7 +59,26 @@ def trainCNN(size=200, n=500, epochs=5, gs=False, Fourier=False, macOs=False, ve
         disp.plot(cmap=plt.cm.Blues)
         plt.show()
 
+    model.save('CNN.h5')
+    print('Model Saved!')
+
 
 if __name__ == '__main__':
+    load = False
+    filename = 'SVM.sav'
+    macOS = False
+
+    if macOS:
+        directories = ["/Users/arshbanerjee/Downloads/archive/StableDiff/StableDiff/StableDiff/",
+                       "/Users/arshbanerjee/Downloads/archive/laion400m-laion4.75/laion400m-laion4.75/laion400m"
+                       "-laion4.75+/laion400m-laion4.75+/"]
+    else:
+        directories = ["C:/Users/arsh0/Downloads/archive/Real_combined/",
+                       "C:/Users/arsh0/Downloads/archive/AI_Combined/"]
+
+    X_train, x_test, y_train, y_test = loadDataCNN(directories, n=7000)
     #  trainCNN(size=200, n=1500, epochs=15, macOs=False, name="CNN with image size 200", plot=True)
-    trainCNN(size=200, n=2000, epochs=15, macOs=False, name="CNN (200x200)", plot=True)
+    if load:
+        pass
+    else:
+        trainCNN(size=64, n=7500, epochs=10, name="CNN (200x200)", plot=False)
