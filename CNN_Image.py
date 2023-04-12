@@ -88,7 +88,7 @@ if __name__ == '__main__':
     print(np.sum(y_train==1)+np.sum(y_test==1))
     print(np.sum(y_train == 0) + np.sum(y_test == 0))
     if load:
-        CNN = tf.keras.models.load_model('CNN_Full.h5')
+        CNN = tf.keras.models.load_model('Models/CNN_Full.h5')
     else:
         CNN = trainCNN(X_train, x_test, y_train, y_test, size=size, n=n, epochs=12,
                        name="CNN (200x200)", plot=False)

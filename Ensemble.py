@@ -43,8 +43,8 @@ def predict(directory):
     Hist = np.array(Hist)
     image_data = np.array(image_data)
 
-    CNN = tf.keras.models.load_model('CNN.h5')
-    CNN2 = tf.keras.models.load_model('CNN2.h5')
+    CNN = tf.keras.models.load_model('Models/CNN.h5')
+    CNN2 = tf.keras.models.load_model('Models/CNN2.h5')
     y_pred_CNN2 = CNN2.predict(Hist)
     y_pred_CNN = CNN.predict(image_data)
 
@@ -83,8 +83,8 @@ if __name__ == '__main__':
         directories = ["C:/Users/arsh0/Downloads/archive/Real_combined/",
                        "C:/Users/arsh0/Downloads/archive/AI_Combined"]
 
-    CNN = tf.keras.models.load_model('CNN.h5')
-    CNN2 = tf.keras.models.load_model('CNN2.h5')
+    CNN = tf.keras.models.load_model('Models/CNN.h5')
+    CNN2 = tf.keras.models.load_model('Models/CNN2.h5')
 
     n = 1000
 

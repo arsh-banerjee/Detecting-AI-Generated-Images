@@ -73,7 +73,7 @@ if __name__ == '__main__':
     print(np.sum(y_train == 0) + np.sum(y_test == 0))
 
     if load:
-        model = tf.keras.models.load_model('CNN2_Full.h5')
+        model = tf.keras.models.load_model('Models/CNN2_Full.h5')
     else:
         model = trainSVM(X_train, x_test, y_train, y_test, epochs=50, save=True)
 
