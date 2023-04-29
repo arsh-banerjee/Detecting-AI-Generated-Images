@@ -69,66 +69,59 @@ def predict(directory):
 
 
 if __name__ == '__main__':
+    # To Predict a single image place in a new folder and put the path below
+    # predict("Path/To/Predict/Directory")
 
-    # predict("C:/Users/arsh0/Downloads/archive/Predict/")
-
-    macOS = False
     loadData = True
 
-    if macOS:
-        directories = ["/Users/arshbanerjee/Downloads/archive/StableDiff/StableDiff/StableDiff/",
-                       "/Users/arshbanerjee/Downloads/archive/laion400m-laion4.75/laion400m-laion4.75/laion400m"
-                       "-laion4.75+/laion400m-laion4.75+/"]
-    else:
-        directories = ["C:/Users/arsh0/Downloads/archive/Real_combined/",
-                       "C:/Users/arsh0/Downloads/archive/AI_Combined"]
+    directories = ["Path/To/Images", "Path/To/Images"]
 
     CNN = tf.keras.models.load_model('Models/CNN.h5')
     CNN2 = tf.keras.models.load_model('Models/CNN2.h5')
 
-    n = 1000
+    n = 5000  # Number of images per class
 
     if loadData:
-        X_train_CNN = np.load('Data/X_train_crop_200.npy')
         x_test_CNN = np.load("Data/X_test_crop_200.npy")
-        y_train_CNN = np.load("Data/y_train_crop_200.npy")
         y_test_CNN = np.load("Data/y_test_crop_200.npy")
-        X_train_SVM = np.load('Data/X_train_Hist.npy')
-        x_test_SVM = np.load("Data/X_test_Hist.npy")
-        y_train_SVM = np.load("Data/y_train_Hist.npy")
-        y_test_SVM = np.load("Data/y_test_Hist.npy")
+        x_test_CNN2 = np.load("Data/X_test_Hist.npy")
+        y_test_CNN2 = np.load("Data/y_test_Hist.npy")
+        X_train_CNN = []
+        X_train_CNN2 = []
+        y_train_CNN = []
+        y_train_CNN2 = []
     else:
-        X_train_SVM, X_test_SVM, y_train_SVM, y_test_SVM = loadHistogram(directories, n=n)
+        X_train_CNN2, X_test_CNN2, y_train_CNN2, y_test_CNN2 = loadHistogram(directories, n=n)
         X_train_CNN, X_test_CNN, y_train_CNN, y_test_CNN = loadRandCrop(directories, n=n, gs=False, Fourier=False,
                                                                         size=64)
 
     print("X_train: {s1}, y_train: {s2}, X_test: {s3}, y_test: {s4}".format(s1=X_train_CNN.shape, s2=y_train_CNN.shape,
                                                                             s3=x_test_CNN.shape, s4=y_test_CNN.shape))
 
-    print("X_train: {s1}, y_train: {s2}, X_test: {s3}, y_test: {s4}".format(s1=X_train_SVM.shape, s2=y_train_SVM.shape,
-                                                                            s3=x_test_SVM.shape, s4=y_test_SVM.shape))
+    print(
+        "X_train: {s1}, y_train: {s2}, X_test: {s3}, y_test: {s4}".format(s1=X_train_CNN2.shape, s2=y_train_CNN2.shape,
+                                                                          s3=x_test_CNN2.shape, s4=y_test_CNN2.shape))
     x_test_CNN = x_test_CNN / 255.0
 
-
-    y_pred_SVM = CNN2.predict(x_test_SVM)
+    y_pred_CNN2 = CNN2.predict(x_test_CNN2)
     y_pred_CNN = CNN.predict(x_test_CNN)
     y_pred = []
 
-    for i in range(len(y_pred_SVM)):
-        if y_pred_SVM[i] == y_pred_CNN[i]:
-            y_pred.append(y_pred_SVM[i])
+    for i in range(len(y_pred_CNN2)):
+        if y_pred_CNN2[i] == y_pred_CNN[i]:
+            y_pred.append(y_pred_CNN2[i])
         else:
             if y_pred_CNN[i] == 1:
                 y_pred.append(y_pred_CNN[i])
             else:
-                y_pred.append(y_pred_SVM[i])
+                y_pred.append(y_pred_CNN2[i])
 
     y_pred = np.rint(np.array(y_pred).flatten())
 
     print(f"The model is {accuracy_score(np.rint(np.array(y_pred_CNN)), y_test_CNN) * 100}% accurate")
-    print(f"The model is {accuracy_score(np.rint(np.array(y_pred_SVM).flatten()), y_test_SVM) * 100}% accurate")
-    print(f"The model is {accuracy_score(y_pred, y_test_SVM) * 100}% accurate")
-    cm = confusion_matrix(y_pred, y_test_SVM)
+    print(f"The model is {accuracy_score(np.rint(np.array(y_pred_CNN2).flatten()), y_test_CNN2) * 100}% accurate")
+    print(f"The model is {accuracy_score(y_pred, y_test_CNN2) * 100}% accurate")
+    cm = confusion_matrix(y_pred, y_test_CNN2)
     disp = ConfusionMatrixDisplay(confusion_matrix=cm)
     disp.plot()
     plt.show()

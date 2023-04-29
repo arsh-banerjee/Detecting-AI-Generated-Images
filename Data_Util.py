@@ -35,8 +35,7 @@ def loadHistogram(directories=None, n=1500, plot=True, size=200):
                     histogram, bin_edges = np.histogram(image[:, :, channel_id], bins=256, range=(0, 256))
                     histogram = histogram / np.linalg.norm(histogram)
                     singleImage.append(histogram)
-
-                Hist.append(singleImage)
+                Hist.append(np.swapaxes(singleImage, 0, 1))
                 category.append(label)
                 i += 1
                 if i == n:
@@ -61,8 +60,10 @@ def loadHistogram(directories=None, n=1500, plot=True, size=200):
                 histogram = np.average(Hist[category == i], axis=0)
                 plt.plot(bin_edges[0:-1], histogram[channel_id], color=color)
 
-            if i == 0: plt.title("RGB Histogram of Real Images")
-            else: plt.title("RGB Histogram of Generated Images")
+            if i == 0:
+                plt.title("RGB Histogram of Real Images")
+            else:
+                plt.title("RGB Histogram of Generated Images")
             plt.xlabel("Color value")
             plt.ylabel("Pixel count")
         plt.show()
